@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     const target = .{
         .cpu_arch = .x86,
         .os_tag = Target.Os.Tag.freestanding,
-        .abi = Target.Abi.none,
+        .abi = Target.Abi.code16,
         .ofmt = .elf,
         .cpu_model = .{ .explicit = &Target.x86.cpu.i386 },
     };
