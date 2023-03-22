@@ -25,7 +25,11 @@ fn writefn(ctx: void, str: []const u8) error{}!usize {
 }
 
 pub fn write(comptime data: []const u8, args: anytype) void {
-    print(0xA);
-    print(0xD);
+    newline();
     format(writer, data, args) catch {};
+}
+
+fn newline() void {
+    print(0xD);
+    print(0xA);
 }
