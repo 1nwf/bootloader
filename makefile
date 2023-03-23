@@ -1,5 +1,6 @@
+DIR := $(shell pwd)
 build: 
-	cd stage_2 && zig build bin
+	zig build bin --build-file $(DIR)/stage_2/build.zig
 	cd boot_sector && make boot.bin
 	cat boot_sector/boot.bin stage_2/stage2.bin > boot.bin
 
