@@ -43,7 +43,7 @@ pub fn build(b: *std.Build) void {
     exe.install();
 
     const exe_path = b.getInstallPath(exe.install_step.?.dest_dir, exe.out_filename);
-    const create_bin = b.addSystemCommand(&.{ "zig", "objcopy", "-O", "binary", exe_path, "kernel.bin" });
+    const create_bin = b.addSystemCommand(&.{ "zig", "objcopy", "-O", "binary", exe_path, "stage2.bin" });
     const bin_step = b.step("bin", "create .bin");
     bin_step.dependOn(b.getInstallStep());
     bin_step.dependOn(&create_bin.step);
