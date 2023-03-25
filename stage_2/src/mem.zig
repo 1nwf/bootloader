@@ -27,7 +27,7 @@ export fn err() callconv(.Naked) void {
 const MemMapEntry = extern struct {
     base: u64,
     length: u64,
-    mem_type: u32,
+    type: u32,
     acpi: u32,
 };
 
@@ -59,6 +59,7 @@ pub fn detectMemory() u32 {
     var i: u32 = 0;
     var ebx: u32 = 0;
 
+    var next: u32 = 0;
     while (i < MAX_ENTRIES) : (i += 1) {
         var ptr = &memoryMap[i];
 
@@ -70,8 +71,15 @@ pub fn detectMemory() u32 {
               [smap] "{edx}" (SMAP),
               [size] "{ecx}" (entry_size),
               [fn_num] "{eax}" (fn_num),
-              [i] "{ebx}" (i),
+              [next] "{ebx}" (next),
         );
+
+        // skip reserved entries
+        if (ptr.type == 2) {
+            i -= 1;
+        }
+
+        next += 1;
 
         if (ebx == 0) {
             i += 1;
