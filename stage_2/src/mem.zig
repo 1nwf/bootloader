@@ -1,4 +1,6 @@
 const write = @import("print.zig").write;
+
+const std = @import("std");
 pub export fn mem_size() u32 {
     var ebx: u32 = 0;
     var ecx: u32 = 0;
@@ -20,4 +22,62 @@ pub export fn mem_size() u32 {
 export fn err() callconv(.Naked) void {
     write("error occured", .{});
     return;
+}
+
+const MemMapEntry = extern struct {
+    base: u64,
+    length: u64,
+    mem_type: u32,
+    acpi: u32,
+};
+
+// http://www.brokenthorn.com/Resources/OSDev17.html
+// https://wiki.osdev.org/Detecting_Memory_(x86)#Getting_an_E820_Memory_Map
+
+// Input
+// EAX = 0x0000E820
+// EBX = continuation value or 0 to start at beginning of map
+// ECX = size of buffer for result (Must be >= 20 bytes)
+// EDX = 0x534D4150h ('SMAP')
+// ES:DI = Buffer for result
+
+// Return
+// CF = clear if successful
+// EAX = 0x534D4150h ('SMAP')
+// EBX = offset of next entry to copy from or 0 if done
+// ECX = actual length returned in bytes
+// ES:DI = buffer filled
+// If error, AH containes error code
+
+const MAX_ENTRIES = 20;
+pub var memoryMap = std.mem.zeroes([MAX_ENTRIES]MemMapEntry);
+pub fn detectMemory() u32 {
+    const SMAP: u32 = 0x534D4150;
+    const entry_size: u16 = @sizeOf(MemMapEntry);
+    const fn_num: u32 = 0xe820;
+
+    var i: u32 = 0;
+    var ebx: u32 = 0;
+
+    while (i < MAX_ENTRIES) : (i += 1) {
+        var ptr = &memoryMap[i];
+
+        asm volatile (
+            \\ clc
+            \\ int $0x15
+            : [ret] "={ebx}" (ebx),
+            : [buffer] "{di}" (ptr),
+              [smap] "{edx}" (SMAP),
+              [size] "{ecx}" (entry_size),
+              [fn_num] "{eax}" (fn_num),
+              [i] "{ebx}" (i),
+        );
+
+        if (ebx == 0) {
+            i += 1;
+            break;
+        }
+    }
+
+    return i;
 }

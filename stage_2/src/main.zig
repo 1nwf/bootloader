@@ -3,7 +3,6 @@ export fn entry() linksection(".entry") void {
 }
 
 const write = @import("print.zig").write;
-
 const mem = @import("mem.zig");
 
 fn halt() noreturn {
@@ -11,8 +10,16 @@ fn halt() noreturn {
         asm volatile ("hlt");
     }
 }
+
 inline fn main() noreturn {
     write("hello from zig!", .{});
+
+    var count = mem.detectMemory();
+    var map = mem.memoryMap[0..count];
+
+    for (map) |e| {
+        write("{}", .{e});
+    }
 
     var mem_size = mem.mem_size();
     write("mem size is {}mb", .{mem_size});
