@@ -51,6 +51,7 @@ const MemMapEntry = extern struct {
 
 const MAX_ENTRIES = 20;
 pub var memoryMap = std.mem.zeroes([MAX_ENTRIES]MemMapEntry);
+var mapEntries: ?u32 = null;
 pub fn detectMemory() u32 {
     const SMAP: u32 = 0x534D4150;
     const entry_size: u16 = @sizeOf(MemMapEntry);
@@ -87,5 +88,23 @@ pub fn detectMemory() u32 {
         }
     }
 
+    mapEntries = i;
     return i;
+}
+
+pub fn availableMemory() u32 {
+    var count: u32 = 0;
+    if (mapEntries) |n| {
+        count = n;
+    } else {
+        count = detectMemory();
+    }
+    var regions = memoryMap[0..count];
+    var size: u32 = 0;
+
+    for (regions) |m| {
+        size += @truncate(usize, m.length / 1024);
+    }
+
+    return size / 1024;
 }

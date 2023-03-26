@@ -20,9 +20,8 @@ inline fn main() noreturn {
     for (map) |e| {
         write("{}", .{e});
     }
-
-    var mem_size = mem.mem_size();
-    write("mem size is {}mb", .{mem_size});
+    var size: u32 = mem.availableMemory();
+    write("available memory = {}mb", .{size});
 
     halt();
 }
