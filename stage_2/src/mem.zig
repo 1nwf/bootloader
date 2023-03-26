@@ -74,8 +74,8 @@ pub fn detectMemory() u32 {
               [next] "{ebx}" (next),
         );
 
-        // skip reserved entries
-        if (ptr.type == 2) {
+        // skip reserved and empty entries
+        if (ptr.type == 2 or ptr.length == 0) {
             i -= 1;
         }
 
