@@ -4,6 +4,7 @@ export fn entry() linksection(".entry") void {
 
 const write = @import("print.zig").write;
 const mem = @import("mem.zig");
+const gdt = @import("gdt.zig");
 
 fn halt() noreturn {
     while (true) {
@@ -12,8 +13,9 @@ fn halt() noreturn {
 }
 
 inline fn main() noreturn {
-    write("hello from zig!", .{});
+    write("(stage 2) hello from zig!", .{});
 
+    gdt.init();
     var count = mem.detectMemory();
     var map = mem.memoryMap[0..count];
 
