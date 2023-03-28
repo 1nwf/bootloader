@@ -56,28 +56,31 @@ pub const GDTR = packed struct {
 
     export fn load(self: *GDTR) void {
         asm volatile (
+            \\ cli
             \\ lgdt (%[addr])
+            \\ sti
             :
             : [addr] "r" (self),
         );
     }
 };
 
-var gdtr: GDTR = undefined;
+var gdtr = GDTR.init(0, @sizeOf(@TypeOf(GDT)) - 1);
 
 // offsets in the gdt
 const CODE_SEG = 0x08;
 const DATA_SEG = 0x10;
 
 pub fn init() void {
-    gdtr = GDTR.init(@ptrToInt(&GDT), @sizeOf(@TypeOf(GDT)) - 1);
+    gdtr.base = @ptrToInt(&GDT);
     gdtr.load();
 }
 
-fn storedGDT() void {
-    const ptr = GDTR.init(0, 0);
+export fn storedGDT() void {
+    var ptr = GDTR.init(0, 0);
     asm volatile (
-        \\ sgdt %[val]
+        \\ sgdtl %[val]
         : [val] "=m" (ptr),
     );
+    write("Loaded GDTR:  {}", .{ptr});
 }
