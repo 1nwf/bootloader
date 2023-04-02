@@ -6,16 +6,20 @@ const write = @import("print.zig").write;
 const mem = @import("mem.zig");
 const gdt = @import("gdt.zig");
 
-fn halt() noreturn {
+const pm = @import("protected_mode.zig");
+
+export fn halt() noreturn {
     while (true) {
-        asm volatile ("hlt");
+        asm volatile (
+            \\ cli
+            \\ hlt
+        );
     }
 }
 
 inline fn main() noreturn {
     write("(stage 2) hello from zig!", .{});
 
-    gdt.init();
     var count = mem.detectMemory();
     var map = mem.memoryMap[0..count];
 
@@ -24,6 +28,10 @@ inline fn main() noreturn {
     }
     var size: u32 = mem.availableMemory();
     write("available memory = {}mb", .{size});
+
+    gdt.init();
+
+    pm.enter_protected_mode();
 
     halt();
 }
