@@ -1,14 +1,12 @@
 DIR := $(shell pwd)
+BOOTLOADER := $(DIR)/stage_2/zig-out/bin/stage2.bin
 build: 
-	zig build bin --build-file $(DIR)/stage_2/build.zig
-	cd boot_sector && make boot.bin
-	cat boot_sector/boot.bin stage_2/stage2.bin > boot.bin
+	zig build --build-file $(DIR)/stage_2/build.zig
 
 run: build
-	qemu-system-i386  -fda boot.bin
+	qemu-system-i386  -fda $(BOOTLOADER)
 
 clean:
-	rm boot_sector/boot.bin
-	rm boot.bin
-	rm stage_2/stage2.bin
+	rm stage_2/boot.o
+	rm stage_2/entry.o
 	rm -rf stage_2/zig-out stage_2/zig-cache

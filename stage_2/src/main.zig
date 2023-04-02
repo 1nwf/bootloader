@@ -1,7 +1,3 @@
-export fn entry() linksection(".entry") void {
-    main();
-}
-
 const write = @import("print.zig").write;
 const mem = @import("mem.zig");
 const gdt = @import("gdt.zig");
@@ -17,8 +13,8 @@ export fn halt() noreturn {
     }
 }
 
-inline fn main() noreturn {
-    write("(stage 2) hello from zig!", .{});
+export fn main() noreturn {
+    write("running stage2...", .{});
 
     var count = mem.detectMemory();
     var map = mem.memoryMap[0..count];
