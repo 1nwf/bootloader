@@ -1,4 +1,4 @@
-stage_2/zig-out
-stage_2/zig-cache
-stage_2/stage2.bin
-boot.bin
+zig-out/
+zig-cache/
+entry.o
+boot.o
