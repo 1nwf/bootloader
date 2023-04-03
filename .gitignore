@@ -1,4 +1,3 @@
 zig-out/
 zig-cache/
-entry.o
-boot.o
+*.o
