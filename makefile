@@ -1,5 +1,5 @@
 DIR := $(shell pwd)
-BOOTLOADER := $(DIR)/zig-out/bin/stage2.bin
+BOOTLOADER := $(DIR)/zig-out/bin/bootloader.bin
 
 run: 
 	zig build

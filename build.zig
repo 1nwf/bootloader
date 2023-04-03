@@ -56,7 +56,7 @@ pub fn build(b: *std.Build) void {
         exe.addObjectFileSource(.{ .path = out });
     }
 
-    const bin = exe.addObjCopy(.{ .basename = "stage2.bin", .format = .bin });
+    const bin = exe.addObjCopy(.{ .basename = "bootloader.bin", .format = .bin });
     const install_step = b.addInstallBinFile(bin.getOutputSource(), bin.basename);
     b.default_step.dependOn(&install_step.step);
 }
