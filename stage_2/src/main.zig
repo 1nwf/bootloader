@@ -4,7 +4,7 @@ const gdt = @import("gdt.zig");
 
 const pm = @import("protected_mode.zig");
 
-export fn halt() noreturn {
+fn halt() noreturn {
     while (true) {
         asm volatile (
             \\ cli
