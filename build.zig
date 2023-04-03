@@ -29,7 +29,7 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "stage2",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = .{ .path = "stage_2/src/main.zig" },
         .target = target,
         .optimize = optimize,
         .linkage = .static,
@@ -40,8 +40,8 @@ pub fn build(b: *std.Build) void {
     exe.setLinkerScriptPath(.{ .path = "link.ld" });
 
     const nasm_sources = [_][]const u8{
-        "src/entry.asm",
-        "../boot_sector/boot.asm",
+        "stage_2/src/entry.asm",
+        "boot_sector/boot.asm",
     };
 
     // This declares intent for the executable to be installed into the
