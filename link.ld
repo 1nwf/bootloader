@@ -11,7 +11,7 @@ SECTIONS {
     stage2_start = .;
 
     .text : {
-		// KEEP(*(.entry))
+		KEEP(*(.entry))
         *(.text)
     }
 
