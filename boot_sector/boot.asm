@@ -5,6 +5,7 @@ extern stage2_sector_size;
 entry:
 	mov bx, STR
 	call print_str
+	call enable_a20
 	call load_second_stage
 	call stage2_start
 	jmp $
@@ -42,11 +43,18 @@ load_err:
 
 
 %include "boot_sector/print.asm"
+%include "boot_sector/a20_line.asm"
 
 
 STR:
 	db "running stage1...", 0
 
+A20_ENABLED:
+	db "A20 Line is enabled", 0
+
+A20_DISABLED:
+	db "A20 Line is disabled", 0
+	
 LOAD_ERR_MSG:
 	db "unable to load data from disk", 0
 
