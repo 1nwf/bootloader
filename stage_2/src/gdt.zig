@@ -14,10 +14,10 @@ pub const Access = packed struct {
 
 const Flags = packed struct {
     reserved: u1 = 0,
-    // if set, defines if the segment is a 32-bit segment. else it is a 16-bit segment
-    is_32bit: u1,
     // if set, defines if the segment is a 64-bit code segment
     long_mode: u1,
+    // if set, defines if the segment is a 32-bit segment. else it is a 16-bit segment
+    is_32bit: u1,
     // indicates how the limit value should be interpreted. if set, the limit is in 4 Kib blocks
     granularity: u1,
 };
