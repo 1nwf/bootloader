@@ -36,7 +36,8 @@ export fn main(boot_drive: u16) noreturn {
     gdt.init();
     pm.enter_protected_mode();
     asm volatile (
-        \\ jmp *0x1000
+        \\ mov $0x1000, %%eax
+        \\ jmp *%%eax
     );
 
     halt();
