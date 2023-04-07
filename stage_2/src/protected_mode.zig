@@ -4,7 +4,7 @@ pub inline fn enter_protected_mode() void {
         \\ mov %%cr0, %%eax
         \\ or $0x1, %%eax
         \\ mov %%eax, %%cr0
-        \\ ljmp $0x08, $init_pm
+        \\ call $0x08, $init_pm
     );
 }
 
@@ -19,12 +19,6 @@ export fn init_pm() callconv(.Naked) void {
     );
 
     print("switched to protected mode");
-
-    while (true) {
-        asm volatile (
-            \\ hlt
-        );
-    }
 }
 
 fn print(comptime str: []const u8) void {

@@ -13,6 +13,7 @@ fn halt() noreturn {
     }
 }
 
+extern var stage2_sector_size: u32;
 export fn main() noreturn {
     write("running stage2...", .{});
 
@@ -25,9 +26,43 @@ export fn main() noreturn {
     var size: u32 = mem.availableMemory();
     write("available memory = {}mb", .{size});
 
-    gdt.init();
+    const stage2_ssize = @ptrToInt(&stage2_sector_size);
+    write("stage2 sector size is {}", .{stage2_ssize});
+    const kernel_sector_start: u8 = @truncate(u8, stage2_ssize) + 2;
+    write("kernel start sector is {}", .{kernel_sector_start});
 
+    load_kernel(kernel_sector_start);
+
+    gdt.init();
     pm.enter_protected_mode();
+    asm volatile (
+        \\ jmp *0x1000
+    );
 
     halt();
+}
+
+fn load_kernel(sector_number: u8) void {
+    asm volatile (
+        \\ clc
+        \\ xor %%ax , %%ax
+        \\
+        \\ mov $0, %%dl // drive
+        \\ mov $40, %%al // number of sectors to read
+        \\
+        \\ mov $0x00, %%dh // head number
+        \\ mov $0x00, %%ch // cylindar number
+        \\
+        \\ mov $0x02, %%ah
+        \\ int $0x13
+        \\
+        \\ jc disk_err
+        :
+        : [sector] "{cl}" (sector_number),
+          [addr] "{bx}" (0x1000),
+    );
+}
+
+export fn disk_err() void {
+    write("error ccurred while loading data from disk", .{});
 }
