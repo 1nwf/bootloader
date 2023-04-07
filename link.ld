@@ -33,5 +33,5 @@ SECTIONS {
 
 	stage2_end = .;
 	stage2_size = stage2_end - stage2_start;
-    stage2_sector_size = (stage2_size / 512) + 1;
+    stage2_sector_size = (stage2_size / 512);
 }
