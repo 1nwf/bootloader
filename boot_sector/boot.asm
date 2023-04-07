@@ -3,10 +3,12 @@ extern stage2_start;
 extern stage2_sector_size;
 [bits 16]
 entry:
+	mov [BOOT_DRIVE], dl
 	mov bx, STR
 	call print_str
 	call enable_a20
 	call load_second_stage
+	push dx
 	call stage2_start
 	jmp $
 
@@ -19,8 +21,8 @@ entry:
 ; https://en.wikipedia.org/wiki/INT_13H
 load_second_stage:
         pusha
+	mov dl, [BOOT_DRIVE]
 	mov bx, stage2_start
-
 	mov al, stage2_sector_size ; number of sectors to read
 	mov dh, 0x00 ; head number
 	mov ch, 0x00 ; cylinder number
@@ -57,4 +59,7 @@ A20_DISABLED:
 	
 LOAD_ERR_MSG:
 	db "unable to load data from disk", 0
+
+BOOT_DRIVE:
+	db 0
 

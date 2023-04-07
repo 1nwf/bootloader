@@ -14,7 +14,7 @@ fn halt() noreturn {
 }
 
 extern var stage2_sector_size: u32;
-export fn main() noreturn {
+export fn main(boot_drive: u16) noreturn {
     write("running stage2...", .{});
 
     var count = mem.detectMemory();
@@ -31,7 +31,7 @@ export fn main() noreturn {
     const kernel_sector_start: u8 = @truncate(u8, stage2_ssize) + 2;
     write("kernel start sector is {}", .{kernel_sector_start});
 
-    load_kernel(kernel_sector_start);
+    load_kernel(@truncate(u8, boot_drive), kernel_sector_start);
 
     gdt.init();
     pm.enter_protected_mode();
@@ -42,12 +42,11 @@ export fn main() noreturn {
     halt();
 }
 
-fn load_kernel(sector_number: u8) void {
+export fn load_kernel(boot_drive: u8, sector_number: u8) void {
     asm volatile (
         \\ clc
         \\ xor %%ax , %%ax
         \\
-        \\ mov $0, %%dl // drive
         \\ mov $40, %%al // number of sectors to read
         \\
         \\ mov $0x00, %%dh // head number
@@ -60,6 +59,7 @@ fn load_kernel(sector_number: u8) void {
         :
         : [sector] "{cl}" (sector_number),
           [addr] "{bx}" (0x1000),
+          [drive] "{dl}" (boot_drive),
     );
 }
 
