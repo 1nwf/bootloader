@@ -58,9 +58,9 @@ pub const DataSegment = Entry.init(0, 0xFFFFF, Access.Data, .{ .is_32bit = 1, .l
 
 pub const GDT = [_]Entry{ Entry.empty(), CodeSegment, DataSegment };
 
-pub const GDTR = packed struct {
+pub const GDTR = extern struct {
     size: u16,
-    base: u32,
+    base: u32 align(2),
     fn init(base: u32, size: u16) GDTR {
         return GDTR{ .base = base, .size = size };
     }

@@ -10,18 +10,18 @@ pub inline fn enter_protected_mode() void {
 
 export fn init_pm() callconv(.Naked) void {
     asm volatile (
-        \\    mov $0x10, %%ax
-        \\    mov %%ax, %%ds
-        \\    mov %%ax, %%ss
-        \\    mov %%ax, %%es
-        \\    mov %%ax, %%fs
-        \\    mov %%ax, %%gs
+        \\ mov $0x10, %%ax
+        \\ mov %%ax, %%ds
+        \\ mov %%ax, %%ss
+        \\ mov %%ax, %%es
+        \\ mov %%ax, %%fs
+        \\ mov %%ax, %%gs
     );
 
-    print("switched to protected mode");
+    jump_to_kernel();
 }
 
-fn print(comptime str: []const u8) void {
+pub fn print(comptime str: []const u8) void {
     for (str, 0..) |c, idx| {
         asm volatile (
             \\ mov $0xb8000, %%eax
@@ -32,4 +32,13 @@ fn print(comptime str: []const u8) void {
               [c] "{ebx}" (c),
         );
     }
+}
+
+fn jump_to_kernel() void {
+    asm volatile (
+        \\ mov $0x7c00, %%esp
+        \\ mov %%esp, %%ebp
+        \\ mov $0x1000, %%eax
+        \\ jmp *%%eax
+    );
 }
