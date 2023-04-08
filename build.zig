@@ -39,6 +39,11 @@ pub fn build(b: *std.Build) void {
     exe.code_model = .kernel;
     exe.setLinkerScriptPath(.{ .path = "link.ld" });
 
+    const options = b.addOptions();
+    const kernel_size = b.option(usize, "kernel_size", "size of kernel") orelse 30;
+    options.addOption(usize, "kernel_size", kernel_size);
+
+    exe.addOptions("build_options", options);
     const nasm_sources = [_][]const u8{
         "stage_2/src/entry.asm",
         "boot_sector/boot.asm",
@@ -52,7 +57,6 @@ pub fn build(b: *std.Build) void {
 
     const nasm_out = compileNasmSource(b, &nasm_sources);
     for (nasm_out) |out| {
-        std.log.info("nasm_out: {s} ", .{out});
         exe.addObjectFileSource(.{ .path = out });
     }
 

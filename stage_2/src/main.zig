@@ -3,6 +3,7 @@ const mem = @import("mem.zig");
 const gdt = @import("gdt.zig");
 
 const pm = @import("protected_mode.zig");
+const kernel_size = @import("build_options").kernel_size;
 
 fn halt() noreturn {
     while (true) {
@@ -44,11 +45,9 @@ export fn main(boot_drive: u16) noreturn {
 }
 
 export fn load_kernel(boot_drive: u8, sector_number: u8) void {
+    const kernel_sector_size: u8 = (kernel_size / 512) + 1;
     asm volatile (
         \\ clc
-        \\ xor %%ax , %%ax
-        \\
-        \\ mov $40, %%al // number of sectors to read
         \\
         \\ mov $0x00, %%dh // head number
         \\ mov $0x00, %%ch // cylindar number
@@ -61,6 +60,7 @@ export fn load_kernel(boot_drive: u8, sector_number: u8) void {
         : [sector] "{cl}" (sector_number),
           [addr] "{bx}" (0x1000),
           [drive] "{dl}" (boot_drive),
+          [kernel_size] "{al}" (kernel_sector_size),
     );
 }
 
