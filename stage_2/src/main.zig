@@ -4,6 +4,7 @@ const gdt = @import("gdt.zig");
 
 const pm = @import("protected_mode.zig");
 const kernel_size = @import("build_options").kernel_size;
+const BootInfo = struct { mapAddr: u32, size: u32 };
 
 fn halt() noreturn {
     while (true) {
@@ -31,6 +32,9 @@ export fn main(boot_drive: u16) noreturn {
     write("stage2 sector size is {}", .{stage2_ssize});
     const kernel_sector_start: u8 = @truncate(u8, stage2_ssize) + 2;
     write("kernel start sector is {}", .{kernel_sector_start});
+
+    pm.bootInfo.size = count;
+    pm.bootInfo.mapAddr = @ptrToInt(&mem.memoryMap);
 
     load_kernel(@truncate(u8, boot_drive), kernel_sector_start);
 

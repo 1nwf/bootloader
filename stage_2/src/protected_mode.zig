@@ -4,12 +4,13 @@ pub inline fn enter_protected_mode() void {
         \\ mov %%cr0, %%eax
         \\ or $0x1, %%eax
         \\ mov %%eax, %%cr0
-        \\ call $0x08, $init_pm
+        \\ ljmp $0x08, $init_pm
     );
 }
 
 export fn init_pm() callconv(.Naked) void {
     asm volatile (
+        \\ .code32
         \\ mov $0x10, %%ax
         \\ mov %%ax, %%ds
         \\ mov %%ax, %%ss
@@ -34,11 +35,17 @@ pub fn print(comptime str: []const u8) void {
     }
 }
 
-fn jump_to_kernel() void {
+const BootInfo = extern struct { mapAddr: u32, size: u32 };
+pub var bootInfo = BootInfo{ .mapAddr = 0, .size = 0 };
+export fn jump_to_kernel() void {
     asm volatile (
+        \\ .code32
         \\ mov $0x7c00, %%esp
         \\ mov %%esp, %%ebp
+        \\ push %%ebx
         \\ mov $0x1000, %%eax
         \\ jmp *%%eax
+        :
+        : [boot_info] "{ebx}" (&bootInfo),
     );
 }
