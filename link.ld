@@ -31,6 +31,10 @@ SECTIONS {
 		. = ALIGN(512);
 	}
 
+	/DISCARD/ : {
+        *(.comment*);
+    }
+
 	stage2_end = .;
 	stage2_size = stage2_end - stage2_start;
     stage2_sector_size = (stage2_size / 512);
