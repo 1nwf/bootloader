@@ -1,5 +1,5 @@
 const std = @import("std");
-const CrossTarget = std.build.CrossTarget;
+const CrossTarget = std.zig.CrossTarget;
 const Target = std.Target;
 const Step = std.Build.Step;
 
@@ -13,7 +13,7 @@ pub fn build(b: *std.Build) void {
     // means any target is allowed, and the default is native. Other options
     // for restricting supported target set are available.
     // const target = b.standardTargetOptions(.{});
-    const target = .{
+    var target: CrossTarget = .{
         .cpu_arch = .x86,
         .os_tag = Target.Os.Tag.freestanding,
         .abi = Target.Abi.code16,
