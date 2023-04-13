@@ -33,18 +33,21 @@ export fn main(boot_drive: u16) noreturn {
     const kernel_sector_start: u8 = @truncate(u8, stage2_ssize) + 2;
     write("kernel start sector is {}", .{kernel_sector_start});
 
+    const kernel_sector_size: u8 = (kernel_size / 512) + 1;
+
+    write("kernel sector size is {}", .{kernel_sector_size});
+
     pm.bootInfo.size = count;
     pm.bootInfo.mapAddr = @ptrToInt(&mem.memoryMap);
 
-    load_kernel(@truncate(u8, boot_drive), kernel_sector_start);
+    load_kernel(@truncate(u8, boot_drive), kernel_sector_start, kernel_sector_size);
 
     gdt.init();
     pm.enter_protected_mode();
     halt();
 }
 
-export fn load_kernel(boot_drive: u8, sector_number: u8) void {
-    const kernel_sector_size: u8 = (kernel_size / 512) + 1;
+export fn load_kernel(boot_drive: u8, sector_number: u8, size: u8) void {
     asm volatile (
         \\ clc
         \\
@@ -59,7 +62,7 @@ export fn load_kernel(boot_drive: u8, sector_number: u8) void {
         : [sector] "{cl}" (sector_number),
           [addr] "{bx}" (0x1000),
           [drive] "{dl}" (boot_drive),
-          [kernel_size] "{al}" (kernel_sector_size),
+          [kernel_size] "{al}" (size),
     );
 }
 
