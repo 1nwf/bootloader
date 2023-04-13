@@ -53,7 +53,7 @@ pub fn build(b: *std.Build) void {
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).
 
-    exe.install();
+    std.build.installArtifact(b, exe);
 
     const nasm_out = compileNasmSource(b, &nasm_sources);
     for (nasm_out) |out| {
