@@ -30,8 +30,8 @@ export fn main(boot_drive: u16) noreturn {
 
     const stage2_ssize = @ptrToInt(&stage2_sector_size);
     write("stage2 sector size is {}", .{stage2_ssize});
-    const kernel_sector_start: u8 = @truncate(u8, stage2_ssize) + 2;
-    write("kernel start sector is {}", .{kernel_sector_start});
+    const kernel_lba_addr: u8 = @truncate(u8, stage2_ssize) + 1;
+    write("kernel lba address is {}", .{kernel_lba_addr});
 
     const kernel_sector_size: u8 = (kernel_size / 512) + 1;
 
@@ -40,32 +40,47 @@ export fn main(boot_drive: u16) noreturn {
     pm.bootInfo.size = count;
     pm.bootInfo.mapAddr = @ptrToInt(&mem.memoryMap);
 
-    load_kernel(@truncate(u8, boot_drive), kernel_sector_start, kernel_sector_size);
+    const d = DAP.init(kernel_sector_size, 0x1000, 0, kernel_lba_addr, 0);
+
+    read_disk(d, @truncate(u8, boot_drive));
 
     gdt.init();
     pm.enter_protected_mode();
     halt();
 }
 
-export fn load_kernel(boot_drive: u8, sector_number: u8, size: u8) void {
-    asm volatile (
-        \\ clc
-        \\
-        \\ mov $0x00, %%dh // head number
-        \\ mov $0x00, %%ch // cylindar number
-        \\
-        \\ mov $0x02, %%ah
-        \\ int $0x13
-        \\
-        \\ jc disk_err
-        :
-        : [sector] "{cl}" (sector_number),
-          [addr] "{bx}" (0x1000),
-          [drive] "{dl}" (boot_drive),
-          [kernel_size] "{al}" (size),
-    );
-}
-
 export fn disk_err() void {
     write("error ccurred while loading data from disk", .{});
+}
+
+// Disk Address Packet
+const DAP = packed struct {
+    size: u8,
+    reseverd: u8 = 0,
+    sectors: u16,
+    buf_offset: u16,
+    buf_segmment: u16,
+    low_addr: u32,
+    high_addr: u32,
+    fn init(sectors: u8, buf_offset: u16, buf_segment: u16, low_addr: u32, high_addr: u32) DAP {
+        return DAP{
+            .size = @sizeOf(DAP),
+            .sectors = sectors,
+            .buf_offset = buf_offset,
+            .buf_segmment = buf_segment,
+            .low_addr = low_addr,
+            .high_addr = high_addr,
+        };
+    }
+};
+
+fn read_disk(d: DAP, boot_drive: u8) void {
+    asm volatile (
+        \\ mov $0x42, %%ah
+        \\ int $0x13
+        \\ jc disk_err
+        :
+        : [dap_addr] "{si}" (&d),
+          [drive] "{dl}" (boot_drive),
+    );
 }
