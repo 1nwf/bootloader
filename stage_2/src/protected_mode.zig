@@ -40,7 +40,7 @@ pub var bootInfo = BootInfo{ .mapAddr = 0, .size = 0 };
 export fn jump_to_kernel() void {
     asm volatile (
         \\ .code32
-        \\ mov $0x7c00, %%esp
+        \\ mov $0x9000, %%esp
         \\ mov %%esp, %%ebp
         \\ push %%ebx
         \\ mov $0x1000, %%eax
