@@ -4,6 +4,14 @@ extern stage2_sector_size;
 [bits 16]
 entry:
 	mov [BOOT_DRIVE], dl
+
+	xor ax, ax
+	mov ds, ax
+	mov ss, ax
+	mov es, ax
+	mov gs, ax
+	mov fs, ax
+
 	mov bx, STR
 	call print_str
 	call enable_a20
