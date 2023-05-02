@@ -42,7 +42,7 @@ export fn main(boot_drive: u16) noreturn {
 
     const d = DAP.init(kernel_sector_size, 0x1000, 0, kernel_lba_addr, 0);
 
-    read_disk(d, @truncate(u8, boot_drive));
+    read_disk(&d, @truncate(u8, boot_drive));
 
     gdt.init();
     pm.enter_protected_mode();
@@ -74,13 +74,13 @@ const DAP = packed struct {
     }
 };
 
-fn read_disk(d: DAP, boot_drive: u8) void {
+fn read_disk(d: *const DAP, boot_drive: u8) void {
     asm volatile (
         \\ mov $0x42, %%ah
         \\ int $0x13
         \\ jc disk_err
         :
-        : [dap_addr] "{si}" (&d),
+        : [dap_addr] "{si}" (d),
           [drive] "{dl}" (boot_drive),
     );
 }
