@@ -34,9 +34,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .linkage = .static,
     });
-
     exe.strip = true;
-    exe.code_model = .kernel;
     exe.setLinkerScriptPath(.{ .path = "link.ld" });
 
     const options = b.addOptions();
