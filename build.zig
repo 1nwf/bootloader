@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     var target: CrossTarget = .{
         .cpu_arch = .x86,
         .os_tag = Target.Os.Tag.freestanding,
-        .abi = Target.Abi.code16,
+        .abi = Target.Abi.none,
         .ofmt = .elf,
         .cpu_model = .{ .explicit = &Target.x86.cpu.i386 },
     };
@@ -34,7 +34,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .linkage = .static,
     });
-    exe.strip = true;
+    // exe.strip = true;
     exe.setLinkerScriptPath(.{ .path = "link.ld" });
 
     const options = b.addOptions();
@@ -44,6 +44,7 @@ pub fn build(b: *std.Build) void {
     exe.addOptions("build_options", options);
     const nasm_sources = [_][]const u8{
         "stage_2/src/entry.asm",
+        "stage_2/src/interrupt.asm",
         "boot_sector/boot.asm",
     };
 

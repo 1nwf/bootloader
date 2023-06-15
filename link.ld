@@ -38,4 +38,8 @@ SECTIONS {
 	stage2_end = .;
 	stage2_size = stage2_end - stage2_start;
     stage2_sector_size = (stage2_size / 512);
+
+	stack_start = .;
+    . += 0x1000;
+    stack_end = .;
 }

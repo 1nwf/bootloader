@@ -52,11 +52,13 @@ pub const Entry = packed struct {
     }
 };
 
-pub const CodeSegment = Entry.init(0, 0xFFFFF, Access.Code, .{ .is_32bit = 1, .long_mode = 0, .granularity = 0 });
+pub const Null = Entry.empty();
+// pub const Code16 = Entry.init(0, 0xFFFF, Access.Code, .{ .is_32bit = 0, .long_mode = 0, .granularity = 0 });
+// pub const Data16 = Entry.init(0, 0xFFFF, Access.Data, .{ .is_32bit = 0, .long_mode = 0, .granularity = 0 });
+pub const Code32 = Entry.init(0, 0xFFFFF, Access.Code, .{ .is_32bit = 1, .long_mode = 0, .granularity = 0 });
+pub const Data32 = Entry.init(0, 0xFFFFF, Access.Data, .{ .is_32bit = 1, .long_mode = 0, .granularity = 0 });
 
-pub const DataSegment = Entry.init(0, 0xFFFFF, Access.Data, .{ .is_32bit = 1, .long_mode = 0, .granularity = 0 });
-
-pub const GDT = [_]Entry{ Entry.empty(), CodeSegment, DataSegment };
+pub const GDT = [_]Entry{ Null, Code32, Data32 };
 
 pub const GDTR = extern struct {
     size: u16,

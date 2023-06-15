@@ -1,25 +1,34 @@
-pub inline fn enter_protected_mode(kernel_addr: u32) void {
+const bootInfo = @import("main.zig").bootInfo;
+pub inline fn enter_protected_mode() void {
     asm volatile (
         \\ cli
         \\ mov %%cr0, %%eax
         \\ or $0x1, %%eax
         \\ mov %%eax, %%cr0
         \\ ljmp $0x08, $init_pm
-        \\
+    );
+}
+
+export fn init_pm() void {
+    asm volatile (
         \\ .code32
-        \\ init_pm:
         \\ mov $0x10, %%ax
         \\ mov %%ax, %%ds
         \\ mov %%ax, %%ss
         \\ mov %%ax, %%es
         \\ mov %%ax, %%fs
         \\ mov %%ax, %%gs
+        \\
+        \\ mov $0x9000, %%esp
+        \\ mov %%esp, %%ebp
+        \\ push %%ecx
+        \\ jmp *%%ebx
     );
 
-    jump_to_kernel(kernel_addr);
+    // jump_to_kernel();
 }
 
-pub fn print(comptime str: []const u8) void {
+pub fn print(str: []const u8) void {
     for (str, 0..) |c, idx| {
         asm volatile (
             \\ mov $0xb8000, %%eax
@@ -32,17 +41,17 @@ pub fn print(comptime str: []const u8) void {
     }
 }
 
-const BootInfo = extern struct { mapAddr: u32, size: u32 };
-pub var bootInfo = BootInfo{ .mapAddr = 0, .size = 0 };
-export fn jump_to_kernel(kernel_addr: u32) void {
+pub const BootInfo = extern struct { mapAddr: u32, size: u32 };
+// pub var bootInfo = BootInfo{ .mapAddr = 0, .size = 0 };
+inline fn jump_to_kernel() void {
     asm volatile (
         \\ .code32
         \\ mov $0x9000, %%esp
         \\ mov %%esp, %%ebp
-        \\ push %%ebx
+        \\ push %%edx
+        \\ mov $0x1000, %%eax
         \\ jmp *%%eax
         :
-        : [boot_info] "{ebx}" (&bootInfo),
-          [kernel_addr] "{eax}" (kernel_addr),
+        : [boot_info] "{edx}" (&bootInfo),
     );
 }

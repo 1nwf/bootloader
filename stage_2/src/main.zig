@@ -1,11 +1,9 @@
-const write = @import("print.zig").write;
-const mem = @import("mem.zig");
 const gdt = @import("gdt.zig");
-const pm = @import("protected_mode.zig");
 const kernel_size = @import("build_options").kernel_size;
-const BootInfo = struct { mapAddr: u32, size: u32 };
+const vga = @import("vga.zig");
+const Registers = @import("regs.zig").Registers;
 
-fn halt() noreturn {
+pub fn halt() noreturn {
     while (true) {
         asm volatile (
             \\ cli
@@ -13,49 +11,47 @@ fn halt() noreturn {
         );
     }
 }
-
-inline fn offset(x: u32) u16 {
-    return @intCast(u16, (x & 0xf));
-}
-
-inline fn segment(x: u32) u16 {
+pub inline fn segment(x: u32) u16 {
     return @intCast(u16, (x & 0xffff0) >> 4);
 }
 
-extern var stage2_sector_size: u32;
-export fn main(boot_drive: u16) noreturn {
-    var count = mem.detectMemory();
-    var map = mem.memoryMap[0..count];
+pub inline fn offset(x: u32) u16 {
+    return @intCast(u16, (x & 0x0f));
+}
 
-    for (map) |e| {
-        write("{}", .{e});
-    }
-    var size: u32 = mem.availableMemory();
-    write("available memory = {}mb", .{size});
+extern var stage2_sector_size: u32;
+extern fn bios_int(int_num: u8, out_regs: *Registers, in_regs: *const Registers) void;
+
+export fn main(boot_drive: u32) noreturn {
+    vga.init(.{});
 
     const stage2_ssize = @ptrToInt(&stage2_sector_size);
     const kernel_lba_addr: u8 = @truncate(u8, stage2_ssize) + 1;
     const kernel_sector_size: u8 = (kernel_size / 512) + 1;
 
-    write("stage2 size {}", .{stage2_ssize});
-    write("kernel lba_addr {}", .{kernel_lba_addr});
-    write("kernel sector size {}", .{kernel_sector_size});
+    const kernel_addr: u16 = 0x1000;
+    var dap = DAP.init(kernel_sector_size, kernel_addr, 0, kernel_lba_addr, 0);
+    const dap_addr = @ptrToInt(&dap);
 
-    const kernel_addr = 0x1000;
-    var d = DAP.init(kernel_sector_size, offset(kernel_addr), segment(kernel_addr), kernel_lba_addr, 0);
+    const in_regs = Registers{
+        .eax = 0x4200,
+        .esi = offset(dap_addr),
+        .ds = segment(dap_addr),
+        .edx = boot_drive,
+    };
 
-    pm.bootInfo.size = count;
-    pm.bootInfo.mapAddr = @ptrToInt(&mem.memoryMap);
+    var out_regs = Registers{};
+    bios_int(0x13, &out_regs, &in_regs);
 
-    read_disk(&d, @truncate(u8, boot_drive));
+    const drive_info = getDriveInfo(boot_drive);
+    vga.writeln("drive info: {}", .{drive_info});
 
-    gdt.init();
-    pm.enter_protected_mode(kernel_addr);
-    halt();
-}
+    asm volatile (
+        \\ jmp *%%eax
+        :
+        : [kernel_addr] "{eax}" (kernel_addr),
+    );
 
-export fn disk_err() noreturn {
-    write("error ccurred while loading data from disk", .{});
     halt();
 }
 
@@ -80,13 +76,46 @@ const DAP = extern struct {
     }
 };
 
-fn read_disk(d: *DAP, boot_drive: u8) void {
-    asm volatile (
-        \\ mov $0x42, %%ah
-        \\ int $0x13
-        \\ jc disk_err
-        :
-        : [dap_addr] "{si}" (d),
-          [drive] "{dl}" (boot_drive),
-    );
+fn bios_print() void {
+    const in_regs = Registers{ .eax = 0x0e61 };
+    var out_regs = Registers{};
+    bios_int(0x10, &out_regs, &in_regs);
+}
+
+pub const DriveParameters = packed struct {
+    buffer_size: u16,
+    info_flags: u16,
+    cylinders: u32,
+    heads: u32,
+    sectors: u32,
+    lba_count: u64,
+    bytes_per_sector: u16,
+    edd: u32,
+};
+
+fn getDriveInfo(drive: u32) DriveParameters {
+    var drive_params: DriveParameters = undefined;
+    drive_params.buffer_size = @sizeOf(DriveParameters);
+    const in_regs = Registers{
+        .eax = 0x4800,
+        .edx = drive,
+        .ds = segment(@ptrToInt(&drive_params)),
+        .esi = offset(@ptrToInt(&drive_params)),
+    };
+
+    var out_regs = Registers{};
+    bios_int(0x13, &out_regs, &in_regs);
+
+    vga.writeln("carry flag: {}", .{out_regs.eflags.flags.carry_flag});
+
+    return drive_params;
+}
+
+fn mem_size() u32 {
+    const in_regs = Registers{ .eax = 0xE801 };
+    var out_regs = Registers{};
+    bios_int(0x15, &out_regs, &in_regs);
+
+    var totalMemMb = ((out_regs.ebx * 64) + out_regs.ecx) / 1024;
+    return totalMemMb;
 }
