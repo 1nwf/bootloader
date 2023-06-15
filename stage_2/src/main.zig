@@ -2,6 +2,10 @@ const gdt = @import("gdt.zig");
 const kernel_size = @import("build_options").kernel_size;
 const vga = @import("vga.zig");
 const Registers = @import("regs.zig").Registers;
+const mem = @import("mem.zig");
+pub extern fn bios_int(int_num: u8, out_regs: *Registers, in_regs: *const Registers) void;
+
+pub const BootInfo = extern struct { mapAddr: u32, size: u32 };
 
 pub fn halt() noreturn {
     while (true) {
@@ -20,7 +24,6 @@ pub inline fn offset(x: u32) u16 {
 }
 
 extern var stage2_sector_size: u32;
-extern fn bios_int(int_num: u8, out_regs: *Registers, in_regs: *const Registers) void;
 
 export fn main(boot_drive: u32) noreturn {
     vga.init(.{});
@@ -43,13 +46,24 @@ export fn main(boot_drive: u32) noreturn {
     var out_regs = Registers{};
     bios_int(0x13, &out_regs, &in_regs);
 
+    const entryCount = mem.detectMemory();
+    vga.writeln("entry count {}", .{entryCount});
+
+    for (mem.memoryMap[0..entryCount]) |entry| {
+        vga.writeln("mem map: {x} ... {x}", .{ entry.base, entry.length });
+    }
+
+    var bootInfo = BootInfo{ .mapAddr = @ptrToInt(&mem.memoryMap), .size = entryCount };
+
     const drive_info = getDriveInfo(boot_drive);
     vga.writeln("drive info: {}", .{drive_info});
 
     asm volatile (
+        \\ push %[bootInfo]
         \\ jmp *%%eax
         :
         : [kernel_addr] "{eax}" (kernel_addr),
+          [bootInfo] "{ebx}" (&bootInfo),
     );
 
     halt();
@@ -109,13 +123,4 @@ fn getDriveInfo(drive: u32) DriveParameters {
     vga.writeln("carry flag: {}", .{out_regs.eflags.flags.carry_flag});
 
     return drive_params;
-}
-
-fn mem_size() u32 {
-    const in_regs = Registers{ .eax = 0xE801 };
-    var out_regs = Registers{};
-    bios_int(0x15, &out_regs, &in_regs);
-
-    var totalMemMb = ((out_regs.ebx * 64) + out_regs.ecx) / 1024;
-    return totalMemMb;
 }

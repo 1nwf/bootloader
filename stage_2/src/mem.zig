@@ -1,30 +1,18 @@
 const write = @import("print.zig").write;
+const bios_int = @import("root").bios_int;
+const Registers = @import("regs.zig").Registers;
 
 const std = @import("std");
-pub export fn mem_size() u32 {
-    var ebx: u32 = 0;
-    var ecx: u32 = 0;
-    asm volatile (
-        \\ clc
-        \\ xor %%ecx, %%ecx
-        \\ xor  %%ebx, %%ebx
-        \\ mov  $0xE801, %%ax
-        \\ int $0x15
-        \\ jc err
-        : [r1] "={ebx}" (ebx),
-          [r2] "={ecx}" (ecx),
-    );
+fn mem_size() u32 {
+    const in_regs = Registers{ .eax = 0xE801 };
+    var out_regs = Registers{};
+    bios_int(0x15, &out_regs, &in_regs);
 
-    var totalMemMb = ((ebx * 64) + ecx) / 1024;
+    var totalMemMb = ((out_regs.ebx * 64) + out_regs.ecx) / 1024;
     return totalMemMb;
 }
 
-export fn err() callconv(.Naked) void {
-    write("error occured", .{});
-    return;
-}
-
-const MemMapEntry = extern struct {
+pub const MemMapEntry = extern struct {
     base: u64,
     length: u64,
     type: u32,
@@ -58,22 +46,14 @@ pub fn detectMemory() u32 {
     const fn_num: u32 = 0xe820;
 
     var i: u32 = 0;
-    var ebx: u32 = 0;
 
     var next: u32 = 0;
     while (i < MAX_ENTRIES) : (i += 1) {
         var ptr = &memoryMap[i];
 
-        asm volatile (
-            \\ clc
-            \\ int $0x15
-            : [ret] "={ebx}" (ebx),
-            : [buffer] "{di}" (ptr),
-              [smap] "{edx}" (SMAP),
-              [size] "{ecx}" (entry_size),
-              [fn_num] "{eax}" (fn_num),
-              [next] "{ebx}" (next),
-        );
+        const in_regs = Registers{ .edi = @ptrToInt(ptr), .edx = SMAP, .ecx = entry_size, .eax = fn_num, .ebx = next };
+        var out_regs = Registers{};
+        bios_int(0x15, &out_regs, &in_regs);
 
         // skip reserved and empty entries
         if (ptr.type == 2 or ptr.length == 0) {
@@ -82,7 +62,7 @@ pub fn detectMemory() u32 {
 
         next += 1;
 
-        if (ebx == 0) {
+        if (out_regs.ebx == 0) {
             i += 1;
             break;
         }
