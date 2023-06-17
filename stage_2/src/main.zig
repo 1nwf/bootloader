@@ -5,7 +5,7 @@ const Registers = @import("regs.zig").Registers;
 const mem = @import("mem.zig");
 pub extern fn bios_int(int_num: u8, out_regs: *Registers, in_regs: *const Registers) void;
 
-pub const BootInfo = extern struct { mapAddr: u32, size: u32 };
+pub const BootInfo = struct { mem_map: []mem.MemMapEntry };
 
 pub fn halt() noreturn {
     while (true) {
@@ -53,7 +53,7 @@ export fn main(boot_drive: u32) noreturn {
         vga.writeln("mem map: {x} ... {x}", .{ entry.base, entry.length });
     }
 
-    var bootInfo = BootInfo{ .mapAddr = @ptrToInt(&mem.memoryMap), .size = entryCount };
+    var bootInfo = BootInfo{ .mem_map = mem.memoryMap[0..entryCount] };
 
     const drive_info = getDriveInfo(boot_drive);
     vga.writeln("drive info: {}", .{drive_info});
