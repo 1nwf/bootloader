@@ -15,15 +15,15 @@ SECTIONS {
         *(.text)
     }
 
-    .rodata : {
+    .rodata : ALIGN(4K) {
          *(.rodata, .rodata.*)
     }
 
-	.data : {
+	.data : ALIGN(4K) {
 		*(.data)
 	}
 
-	.bss : {
+	.bss : ALIGN(4K) {
 		*(.bss)
 	}
 
@@ -31,9 +31,6 @@ SECTIONS {
 		. = ALIGN(512);
 	}
 
-	/DISCARD/ : {
-        *(.comment*);
-    }
 
 	stage2_end = .;
 	stage2_size = stage2_end - stage2_start;
