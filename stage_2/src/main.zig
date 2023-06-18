@@ -1,4 +1,3 @@
-const gdt = @import("gdt.zig");
 const kernel_size = @import("build_options").kernel_size;
 const vga = @import("vga.zig");
 const Registers = @import("regs.zig").Registers;
@@ -34,17 +33,7 @@ export fn main(boot_drive: u32) noreturn {
 
     const kernel_addr: u16 = 0x1000;
     var dap = DAP.init(kernel_sector_size, kernel_addr, 0, kernel_lba_addr, 0);
-    const dap_addr = @ptrToInt(&dap);
-
-    const in_regs = Registers{
-        .eax = 0x4200,
-        .esi = offset(dap_addr),
-        .ds = segment(dap_addr),
-        .edx = boot_drive,
-    };
-
-    var out_regs = Registers{};
-    bios_int(0x13, &out_regs, &in_regs);
+    read_disk(&dap, boot_drive);
 
     const entryCount = mem.detectMemory();
     vga.writeln("entry count {}", .{entryCount});
@@ -123,4 +112,17 @@ fn getDriveInfo(drive: u32) DriveParameters {
     vga.writeln("carry flag: {}", .{out_regs.eflags.flags.carry_flag});
 
     return drive_params;
+}
+
+fn read_disk(d: *DAP, disk_num: u32) void {
+    const dap_addr = @ptrToInt(d);
+    const in_regs = Registers{
+        .eax = 0x4200,
+        .esi = offset(dap_addr),
+        .ds = segment(dap_addr),
+        .edx = disk_num,
+    };
+
+    var out_regs = Registers{};
+    bios_int(0x13, &out_regs, &in_regs);
 }

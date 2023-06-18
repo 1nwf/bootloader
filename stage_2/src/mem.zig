@@ -1,4 +1,3 @@
-const write = @import("print.zig").write;
 const bios_int = @import("root").bios_int;
 const Registers = @import("regs.zig").Registers;
 
