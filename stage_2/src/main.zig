@@ -24,16 +24,26 @@ pub inline fn offset(x: u32) u16 {
 
 extern var stage2_sector_size: u32;
 
+extern var stack_start: usize;
+extern var stack_end: usize;
+
 export fn main(boot_drive: u32) noreturn {
     vga.init(.{});
+
+    const start = @ptrToInt(&stack_start);
+    const send = @ptrToInt(&stack_end);
+
+    vga.writeln("stack start: 0x{x}", .{start});
+    vga.writeln("stack_end: 0x{x}", .{send});
 
     const stage2_ssize = @ptrToInt(&stage2_sector_size);
     const kernel_lba_addr: u8 = @truncate(u8, stage2_ssize) + 1;
     const kernel_sector_size: u8 = (kernel_size / 512) + 1;
 
-    const kernel_addr: u16 = 0x1000;
-    var dap = DAP.init(kernel_sector_size, kernel_addr, 0, kernel_lba_addr, 0);
-    read_disk(&dap, boot_drive);
+    vga.writeln("kernel  sector size: {}", .{kernel_sector_size});
+
+    const kernel_addr: u32 = 0x1000;
+    read_disk(kernel_sector_size, kernel_lba_addr, kernel_addr, boot_drive);
 
     const entryCount = mem.detectMemory();
     vga.writeln("entry count {}", .{entryCount});
@@ -43,9 +53,6 @@ export fn main(boot_drive: u32) noreturn {
     }
 
     var bootInfo = BootInfo{ .mem_map = mem.memoryMap[0..entryCount] };
-
-    const drive_info = getDriveInfo(boot_drive);
-    vga.writeln("drive info: {}", .{drive_info});
 
     asm volatile (
         \\ push %[bootInfo]
@@ -109,20 +116,43 @@ fn getDriveInfo(drive: u32) DriveParameters {
     var out_regs = Registers{};
     bios_int(0x13, &out_regs, &in_regs);
 
-    vga.writeln("carry flag: {}", .{out_regs.eflags.flags.carry_flag});
+    if (out_regs.eflags.flags.carry_flag) {
+        vga.writeln("unable to get disk info", .{});
+        halt();
+    }
 
     return drive_params;
 }
 
-fn read_disk(d: *DAP, disk_num: u32) void {
-    const dap_addr = @ptrToInt(d);
-    const in_regs = Registers{
-        .eax = 0x4200,
-        .esi = offset(dap_addr),
-        .ds = segment(dap_addr),
-        .edx = disk_num,
-    };
+fn read_disk(sectors: u8, lba_start: u32, buf_off: u16, disk_num: u32) void {
+    var disk_info = getDriveInfo(disk_num);
+    var sectors_left = sectors;
+    vga.writeln("disk info {}", .{disk_info});
 
-    var out_regs = Registers{};
-    bios_int(0x13, &out_regs, &in_regs);
+    while (sectors_left > 0) {
+        const to_read = @min(sectors_left, @truncate(u8, 50));
+        const lba_offset = sectors - sectors_left;
+        const lba = lba_start + lba_offset;
+
+        var dap = DAP.init(to_read, buf_off, 0, lba, 0);
+
+        const dap_addr = @ptrToInt(&dap);
+        const in_regs = Registers{
+            .eax = 0x4200,
+            .esi = offset(dap_addr),
+            .ds = segment(dap_addr),
+            .edx = disk_num,
+        };
+
+        var out_regs = Registers{};
+
+        bios_int(0x13, &out_regs, &in_regs);
+
+        if (out_regs.eflags.flags.carry_flag) {
+            vga.writeln("carry flag: {}", .{out_regs.eflags.flags.carry_flag});
+            halt();
+        }
+
+        sectors_left -= to_read;
+    }
 }
