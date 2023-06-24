@@ -55,7 +55,7 @@ export fn main(boot_drive: u32) noreturn {
     var bootInfo = BootInfo{ .mem_map = mem.memoryMap[0..entryCount] };
 
     asm volatile (
-        \\ push %[bootInfo]
+        \\ push %%ebx
         \\ jmp *%%eax
         :
         : [kernel_addr] "{eax}" (kernel_addr),
@@ -149,7 +149,7 @@ fn read_disk(sectors: u8, lba_start: u32, buf_off: u16, disk_num: u32) void {
         bios_int(0x13, &out_regs, &in_regs);
 
         if (out_regs.eflags.flags.carry_flag) {
-            vga.writeln("carry flag: {}", .{out_regs.eflags.flags.carry_flag});
+            vga.writeln("disk load carry flag: {}", .{out_regs.eflags.flags.carry_flag});
             halt();
         }
 
