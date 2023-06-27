@@ -55,7 +55,7 @@ style: Style = .{},
 
 pub fn init(style: Style) void {
     screen = Screen{ .style = style };
-    screen.clearScreen();
+    // screen.clearScreen();
 }
 
 pub fn setColor(style: Style) void {
