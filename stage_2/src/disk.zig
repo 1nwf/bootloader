@@ -22,14 +22,14 @@ fn copyMem(dest: []u8, src: []u8) void {
 
 fn createSlice(addr: usize, comptime size: u32) []u8 {
     var slice: []u8 = undefined;
-    slice.ptr = @intToPtr([*]u8, addr);
+    slice.ptr = @ptrFromInt(addr);
     slice.len = size;
     return slice;
 }
 
 pub fn read_disk(sectors: u8, lba_start: u32, buff: u16, disk_num: usize) void {
     var dap = DAP.init(sectors, offset(buff), segment(buff), lba_start, 0);
-    const dap_addr = @ptrToInt(&dap);
+    const dap_addr = @intFromPtr(&dap);
     var in_regs = Registers{
         .eax = 0x4200,
         .esi = offset(dap_addr),

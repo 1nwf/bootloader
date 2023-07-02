@@ -50,7 +50,7 @@ pub fn detectMemory() u32 {
     while (i < MAX_ENTRIES) : (i += 1) {
         var ptr = &memoryMap[i];
 
-        const in_regs = Registers{ .edi = @ptrToInt(ptr), .edx = SMAP, .ecx = entry_size, .eax = fn_num, .ebx = next };
+        const in_regs = Registers{ .edi = @intFromPtr(ptr), .edx = SMAP, .ecx = entry_size, .eax = fn_num, .ebx = next };
         var out_regs = Registers{};
         bios_int(0x15, &out_regs, &in_regs);
 
@@ -82,7 +82,7 @@ pub fn availableMemory() u32 {
     var size: u32 = 0;
 
     for (regions) |m| {
-        size += @truncate(usize, m.length / 1024);
+        size += @truncate(m.length / 1024);
     }
 
     return size / 1024;

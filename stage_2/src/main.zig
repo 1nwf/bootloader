@@ -16,11 +16,11 @@ pub fn halt() noreturn {
     }
 }
 pub inline fn segment(x: u32) u16 {
-    return @intCast(u16, (x & 0xffff0) >> 4);
+    return @intCast((x & 0xffff0) >> 4);
 }
 
 pub inline fn offset(x: u32) u16 {
-    return @intCast(u16, (x & 0x0f));
+    return @intCast((x & 0x0f));
 }
 
 extern var stage2_sector_size: u32;
@@ -35,8 +35,8 @@ export fn main(boot_drive: u32) noreturn {
         vga.writeln("mem map: {x} ... {x}", .{ entry.base, entry.length });
     }
 
-    const stage2_ssize = @ptrToInt(&stage2_sector_size);
-    const kernel_lba_addr: u8 = @truncate(u8, stage2_ssize) + 1;
+    const stage2_ssize = @intFromPtr(&stage2_sector_size);
+    const kernel_lba_addr: u8 = @as(u8, @truncate(stage2_ssize)) + 1;
     const kernel_sector_size: usize = (kernel_size / 512) + 1;
 
     const kernel_addr: u32 = 0x100000;
@@ -99,8 +99,8 @@ fn getDriveInfo(drive: u32) DriveParameters {
     const in_regs = Registers{
         .eax = 0x4800,
         .edx = drive,
-        .ds = segment(@ptrToInt(&drive_params)),
-        .esi = offset(@ptrToInt(&drive_params)),
+        .ds = segment(@intFromPtr(&drive_params)),
+        .esi = offset(@intFromPtr(&drive_params)),
     };
 
     var out_regs = Registers{};
